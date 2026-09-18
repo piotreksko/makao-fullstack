@@ -10,6 +10,9 @@ node_modules
 /client/build
 /server/dist
 
+# local planning doc, not for the repo
+/FULLSTACK_MIGRATION.md
+
 # misc
 .DS_Store
 .env.local
