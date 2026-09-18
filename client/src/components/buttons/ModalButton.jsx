@@ -1,11 +1,15 @@
-import React from "react";
 import PropTypes from 'prop-types';
 
+const buttonImages = import.meta.glob("../../content/images/**/*.png", {
+  eager: true,
+  import: "default"
+});
+
 export default function ModalButton({ onClick, text, image, ...props }) {
-    
+
   const buttonStyle = image && {
     backgroundImage:
-      "url(" + require(`../../content/images/${image}.png`) + ")",
+      "url(" + buttonImages[`../../content/images/${image}.png`] + ")",
     backgroundSize: "40px",
     backgroundRepeat: "no-repeat",
     backgroundPosition: "center"

@@ -1,10 +1,15 @@
 import React, { Component } from "react";
 import PropTypes from "prop-types";
 
+const cardImages = import.meta.glob("../../content/images/cards/*.png", {
+  eager: true,
+  import: "default"
+});
+
 class Card extends Component {
   render() {
     const fileName = this.props.card.type + "_of_" + this.props.card.weight;
-    const card = require(`../../content/images/cards/${fileName}.png`);
+    const card = cardImages[`../../content/images/cards/${fileName}.png`];
 
     let cardStyle = {
       backgroundImage: "url(" + card + ")"
