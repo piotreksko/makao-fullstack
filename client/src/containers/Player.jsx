@@ -70,7 +70,7 @@ class Player extends Component {
   }
 
   isFirstTurn() {
-    return this.props.stats.movesCount === 0;
+    return this.props.stats.totalMoves === 0;
   }
 
   waitTurns = () => {
@@ -486,7 +486,7 @@ class Player extends Component {
 const mapStateToProps = state => {
   return {
     gameState: state.gameState,
-    stats: state.stats,
+    stats: state.stats.local,
     modals: state.modals
   };
 };

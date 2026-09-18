@@ -84,8 +84,8 @@ export function waitTurns(who) {
   return function(dispatch, getState) {
     const gameState = getState().gameState;
 
-    dispatch(statsActions.updateLocalStat("movesCount"));
-    dispatch(statsActions.updateGlobalStat("movesCount"));
+    dispatch(statsActions.updateLocalStat("totalMoves"));
+    dispatch(statsActions.updateGlobalStat("totalMoves"));
 
     if (gameState.waitTurn) {
       dispatch(updateGameFactor("waitTurn", 0));
@@ -103,8 +103,8 @@ export function waitTurns(who) {
 export function addToPile(cards, who) {
   return (dispatch, getState) => {
     let isFromPlayer = who === "player";
-    dispatch(statsActions.updateLocalStat("movesCount"));
-    dispatch(statsActions.updateGlobalStat("movesCount"));
+    dispatch(statsActions.updateLocalStat("totalMoves"));
+    dispatch(statsActions.updateGlobalStat("totalMoves"));
 
     setTimeout(() => dispatch(playSound("pick_card1")), 350);
 
@@ -185,7 +185,7 @@ export function checkMacao(gameState) {
       gameState.player.cards.length === 1 ||
       gameState.cpuPlayer.cards.length === 1
     ) {
-      dispatch(statsActions.updateGlobalStat("makaoCallCount"));
+      dispatch(statsActions.updateGlobalStat("totalMacaoCalls"));
       dispatch({ type: "SHOW_MODAL", modal: "macao" });
       setTimeout(() => {
         dispatch({ type: "HIDE_MODAL", modal: "macao" });
@@ -199,12 +199,12 @@ export function checkWin(gameState) {
     if (!gameState.player.cards.length) {
       dispatch({ type: "SHOW_MODAL", modal: "gameOver" });
       dispatch(playSound("victory"));
-      dispatch(statsActions.updateLocalStat("playerWinCount"));
-      dispatch(statsActions.updateGlobalStat("playerWinCount"));
+      dispatch(statsActions.updateLocalStat("totalPlayerWins"));
+      dispatch(statsActions.updateGlobalStat("totalPlayerWins"));
     } else if (!gameState.cpuPlayer.cards.length) {
       if (!getState().modals.gameOver) {
-        dispatch(statsActions.updateLocalStat("computerWinCount"));
-        dispatch(statsActions.updateGlobalStat("computerWinCount"));
+        dispatch(statsActions.updateLocalStat("totalComputerWins"));
+        dispatch(statsActions.updateGlobalStat("totalComputerWins"));
         dispatch(playSound("defeat"));
       }
       dispatch({ type: "SHOW_MODAL", modal: "gameOver" });
@@ -217,8 +217,8 @@ export function takeCards(who) {
     const gameState = getState().gameState;
     const firstCardChecked = gameState.firstCardChecked;
     if (firstCardChecked) {
-      dispatch(statsActions.updateLocalStat("movesCount"));
-      dispatch(statsActions.updateGlobalStat("movesCount"));
+      dispatch(statsActions.updateLocalStat("totalMoves"));
+      dispatch(statsActions.updateGlobalStat("totalMoves"));
     }
 
     let howMany = !firstCardChecked ? 1 : gameState.cardsToTake - 2;

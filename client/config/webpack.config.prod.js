@@ -89,6 +89,7 @@ const getStyleLoaders = (cssOptions, preProcessor) => {
     loaders.push({
       loader: require.resolve(preProcessor),
       options: {
+        implementation: require('sass'),
         sourceMap: shouldUseSourceMap,
       },
     });

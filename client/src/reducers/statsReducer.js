@@ -4,15 +4,15 @@ import { UPDATE_LOCAL_STAT } from "../actions/statsActions";
 
 const initialState = {
   local: {
-    movesCount: 0,
-    playerWinCount: 0,
-    computerWinCount: 0
+    totalMoves: 0,
+    totalPlayerWins: 0,
+    totalComputerWins: 0
   },
   global: {
-    playerWinCount: 0,
-    computerWinCount: 0,
-    movesCount: 0,
-    makaoCallCount: 0
+    totalPlayerWins: 0,
+    totalComputerWins: 0,
+    totalMoves: 0,
+    totalMacaoCalls: 0
   }
 };
 

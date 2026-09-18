@@ -54,34 +54,34 @@ export class Header extends PureComponent {
           <h6>Global statistics</h6>
           <div className="score">
             <label>Makao call count:</label>
-            <span> {this.props.globalStats.makaoCallCount}</span>
+            <span> {this.props.globalStats.totalMacaoCalls}</span>
           </div>
           <div className="score">
             <label>Total player score:</label>
-            <span> {this.props.globalStats.playerWinCount}</span>
+            <span> {this.props.globalStats.totalPlayerWins}</span>
           </div>
           <div className="score">
             <label>Total computer score:</label>
-            <span> {this.props.globalStats.computerWinCount}</span>
+            <span> {this.props.globalStats.totalComputerWins}</span>
           </div>
           <div className="total-moves-counter">
             <label>Total moves:</label>
-            <span> {this.props.globalStats.movesCount}</span>
+            <span> {this.props.globalStats.totalMoves}</span>
           </div>
         </div>
         <div className="current-stats">
           <h6>Current game</h6>
           <div className="score">
             <label>Moves:</label>
-            <span> {this.props.localStats.movesCount}</span>
+            <span> {this.props.localStats.totalMoves}</span>
           </div>
           <div className="score">
             <label>Computer score:</label>
-            <span> {this.props.localStats.computerWinCount}</span>
+            <span> {this.props.localStats.totalComputerWins}</span>
           </div>
           <div className="score">
             <label>Your score:</label>
-            <span> {this.props.localStats.playerWinCount}</span>
+            <span> {this.props.localStats.totalPlayerWins}</span>
           </div>
         </div>
       </div>
