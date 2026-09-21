@@ -28,7 +28,7 @@ describe('Auth (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await dataSource.query('TRUNCATE TABLE users');
+    await dataSource.query('TRUNCATE TABLE users CASCADE');
   });
 
   afterAll(async () => {
@@ -154,7 +154,7 @@ describe('Auth (e2e)', () => {
 
     it('rejects a valid token whose user was deleted', async () => {
       const { body } = await register(validUser).expect(201);
-      await dataSource.query('TRUNCATE TABLE users');
+      await dataSource.query('TRUNCATE TABLE users CASCADE');
       await request(app.getHttpServer())
         .get('/auth/me')
         .set('Authorization', `Bearer ${body.accessToken}`)

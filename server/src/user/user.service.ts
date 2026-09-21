@@ -1,9 +1,8 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QueryFailedError, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
+import { isUniqueViolation } from '../common/pg-errors.js';
 import { User } from './user.entity.js';
-
-const PG_UNIQUE_VIOLATION = '23505';
 
 @Injectable()
 export class UserService {
@@ -31,10 +30,7 @@ export class UserService {
     try {
       return await this.users.save({ email, passwordHash, displayName });
     } catch (err) {
-      if (
-        err instanceof QueryFailedError &&
-        (err as { code?: string }).code === PG_UNIQUE_VIOLATION
-      ) {
+      if (isUniqueViolation(err)) {
         throw new ConflictException('Display name or email already taken');
       }
       throw err;
