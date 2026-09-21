@@ -7,5 +7,9 @@ export default defineConfig({
     globals: true,
     root: './',
     include: ['**/*.e2e-spec.ts'],
+    fileParallelism: false,
+    env: {
+      DATABASE_URL: 'postgresql://makao:makao@localhost:5432/makao_test',
+    },
   },
 });

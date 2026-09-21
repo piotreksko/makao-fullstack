@@ -22,7 +22,7 @@ export class GameView extends Component {
     this.restartGame = this.restartGame.bind(this);
   }
 
-  componentWillMount() {
+  componentDidMount() {
     setTimeout(() => {
       this.props.showModal("whoStarts");
     }, 1);

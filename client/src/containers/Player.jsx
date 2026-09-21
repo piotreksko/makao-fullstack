@@ -2,7 +2,7 @@ import React, { Component } from "react";
 import { connect } from "react-redux";
 import _ from "lodash";
 import Aux from "../hoc/Auxilliary";
-import { CSSTransition, transit } from "react-css-transition";
+import SlideIn from "../components/SlideIn";
 
 import * as logicActions from "../actions/logicActions";
 import * as soundActions from "../actions/soundActions";
@@ -20,7 +20,7 @@ class Player extends Component {
     };
   }
 
-  componentWillMount() {
+  componentDidMount() {
     if (this.props.gameState.isPlayerTurn) {
       setTimeout(() => {
         this.checkAvailableCards();
@@ -324,6 +324,14 @@ class Player extends Component {
   }
 
   updatePlayerCards(newAvailable, newPossible, newSelected) {
+    const { availableCards, possibleCards, selectedCards } = this.state;
+    if (
+      _.isEqual(availableCards, newAvailable) &&
+      _.isEqual(possibleCards, newPossible) &&
+      _.isEqual(selectedCards, newSelected)
+    ) {
+      return;
+    }
     this.setState({
       availableCards: newAvailable,
       possibleCards: newPossible,
@@ -402,7 +410,6 @@ class Player extends Component {
   }
 
   render() {
-    CSSTransition.childContextTypes = {};
     const gameState = this.props.gameState,
       playerCards = gameState.player.cards,
       pileTopCard = gameState.pile[gameState.pile.length - 1],
@@ -410,8 +417,7 @@ class Player extends Component {
         (pileTopCard.type === "4" && gameState.waitTurn) ||
         gameState.player.wait
           ? true
-          : false,
-      transitionsOn = true;
+          : false;
     let transformationValue = this.getTransformationValue();
     let renderedCard = 1;
     let assignCardClass = card => {
@@ -440,31 +446,20 @@ class Player extends Component {
             ).map((card, index) => {
               renderedCard += 1;
               return (
-                <CSSTransition
+                <SlideIn
                   key={`${card.type}_${card.weight}`}
-                  transitionDelay={{
-                    enter: renderedCard * 50
-                  }}
-                  transitionAppear={{ transitionsOn }}
-                  defaultStyle={{
-                    transform: `translate(${transformationValue.x}px, ${
-                      transformationValue.y
-                    }px)`
-                  }}
-                  enterStyle={{
-                    transform: transit("translate(0, 0)", 250, "ease-in-out")
-                  }}
-                  activeStyle={{ transform: "translate(0, 0)" }}
-                  active={transitionsOn}
+                  x={transformationValue.x}
+                  y={transformationValue.y}
+                  duration={250}
+                  delay={renderedCard * 50}
                 >
                   <Card
-                    key={`${card.type}_${card.weight}`}
                     clickOwnCard={this.clickOwnCard}
                     card={card}
                     index={index}
                     cardClass={assignCardClass(card)}
                   />
-                </CSSTransition>
+                </SlideIn>
               );
             })}
           </div>

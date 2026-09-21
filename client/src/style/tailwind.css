@@ -1,0 +1,6 @@
+/* Theme + utilities only (no preflight reset, so Bootstrap and the game styles are untouched).
+   Classes are prefixed `tw:` to avoid clashing with Bootstrap's .rounded, .shadow-lg, .p-4, ...
+   Drop the prefix once Bootstrap is removed. */
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme) prefix(tw);
+@import "tailwindcss/utilities.css" layer(utilities) prefix(tw);

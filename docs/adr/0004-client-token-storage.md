@@ -1,6 +1,6 @@
 # 0004. Where the client stores the JWT
 
-Status: Proposed (not decided)
+Status: Accepted (option A, implemented for now; revisit before any production use)
 Date: 2026-09-21
 
 ## Context
@@ -24,7 +24,7 @@ The React client receives an access token from the API (see 0002) and must keep 
 
 ## Decision
 
-TBD.
+Option A: the token is kept in `localStorage` (`client/src/services/tokenStorage.js`) and sent as `Authorization: Bearer` by `apiClient.js`. It needs no backend changes and works with the current CORS setup. On any 401 for a request that carried a token, the client clears it and shows the login page with a "session expired" message. The accepted risk is that an XSS bug could read the token, so the client must never render unsanitised user-supplied HTML. Move to option B (httpOnly cookie) before exposing this beyond development.
 
 ## Consequences to weigh
 

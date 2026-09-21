@@ -1,35 +1,23 @@
 import React from "react";
 import Card from "./cards/Card";
+import SlideIn from "./SlideIn";
 import PropTypes from "prop-types";
-import { CSSTransition, transit } from "react-css-transition";
 
-export default function Pile(props) {
-  if (!props.cards) return null;
-  CSSTransition.childContextTypes = {};
-  const omegalul = true;
-
-  function getPlusMinus(card) {
-    return card.isFromPlayer ? '' : '-';
-  }
+export default function Pile({ cards }) {
+  if (!cards) return null;
 
   return (
     <div id="pile">
-      {props.cards.map((card, idx) => (
-        <CSSTransition
+      {cards.map((card, idx) => (
+        <SlideIn
           key={idx}
-          transitionDelay={{ enter: 50 }}
-          transitionAppear={{ omegalul }}
-          defaultStyle={{
-            transform: `translate(-50px, ${getPlusMinus(card)}200px)`
-          }}
-          enterStyle={{
-            transform: transit("translate(0, 0)", 300, "ease-in-out")
-          }}
-          activeStyle={{ transform: "translate(0, 0)" }}
-          active={omegalul}
+          x={-50}
+          y={card.isFromPlayer ? 200 : -200}
+          duration={300}
+          delay={50}
         >
-          <Card card={card} fromPile={true} key={idx} />
-        </CSSTransition>
+          <Card card={card} fromPile={true} />
+        </SlideIn>
       ))}
     </div>
   );

@@ -461,6 +461,20 @@ fieldset {
   }
 }
 
+@keyframes slide-in {
+  from {
+    transform: translate(var(--slide-x, 0), var(--slide-y, 0));
+  }
+  to {
+    transform: translate(0, 0);
+  }
+}
+
+.slide-in {
+  animation: slide-in var(--slide-duration, 250ms) ease-in-out
+    var(--slide-delay, 0ms) backwards;
+}
+
 // @media only screen and (max-width: 480px) {
 //   #score {
 //     margin: 1.5em 0 0.5em 0;
