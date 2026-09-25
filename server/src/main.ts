@@ -2,10 +2,13 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
+import { CorsIoAdapter } from './common/cors-io.adapter.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  app.enableCors({ origin: process.env.CORS_ORIGIN ?? 'http://localhost:3000' });
+  const corsOrigin = process.env.CORS_ORIGIN ?? 'http://localhost:3000';
+  app.enableCors({ origin: corsOrigin });
+  app.useWebSocketAdapter(new CorsIoAdapter(app, corsOrigin));
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
   );

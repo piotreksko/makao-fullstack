@@ -41,7 +41,7 @@ export class RoomsController {
 
   @Get(':id')
   get(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
-    return this.roomsService.getView(id, user.id);
+    return this.roomsService.getRoomView(id, user.id);
   }
 
   @Post(':id/join')
