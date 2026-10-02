@@ -3,6 +3,7 @@ import gameState from "./reducers/gameStateReducer";
 import modals from './reducers/modalsReducer';
 import stats from './reducers/statsReducer';
 import auth from './reducers/authReducer';
+import rooms from './reducers/roomsReducer';
 import { thunk } from "redux-thunk";
 import soundsMiddleware from 'redux-sounds';
 import { soundsData } from './constants/soundsData';
@@ -11,7 +12,8 @@ const rootReducer = combineReducers({
   gameState,
   modals,
   stats,
-  auth
+  auth,
+  rooms
 });
 
 const middleware = [thunk];

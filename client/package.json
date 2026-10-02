@@ -17,6 +17,7 @@
     "redux": "^5.0.1",
     "redux-sounds": "^3.0.1",
     "redux-thunk": "^3.1.0",
+    "socket.io-client": "^4.8.4",
     "tailwindcss": "^4.3.3"
   },
   "scripts": {

@@ -4,7 +4,7 @@ import './style/style.scss';
 import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
 import './style/tailwind.css';
 import Aux from './hoc/Auxilliary';
-import GameView from './containers/GameView';
+import Lobby from './containers/Lobby';
 import AuthPage from './containers/AuthPage';
 import * as authActions from './actions/authActions';
 
@@ -33,7 +33,7 @@ export const App = ({ user, initializing, restoreSession, logoutUser }) => {
           Log out
         </button>
       </div>
-      <GameView />
+      <Lobby />
     </Aux>
   );
 };
