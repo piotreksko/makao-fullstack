@@ -20,8 +20,13 @@ import { Subscription } from 'rxjs';
 import type { Namespace, Socket } from 'socket.io';
 import type { AuthUser } from '../auth/current-user.decorator.js';
 import type { JwtPayload } from '../auth/jwt.strategy.js';
+import {
+  IllegalMoveError,
+  type IllegalMoveCode,
+} from '../game-engine/index.js';
 import { UserService } from '../user/user.service.js';
-import { RoomIdDto, SendMessageDto } from './game.dto.js';
+import { PlayCardsDto, RoomIdDto, SendMessageDto } from './game.dto.js';
+import { GameUpdate, GamesService } from './games.service.js';
 import { RoomEvent, RoomEvents } from './room-events.service.js';
 import { RoomsService } from './rooms.service.js';
 
@@ -32,7 +37,17 @@ interface SocketData {
 
 type Ack<T> =
   | ({ ok: true } & T)
-  | { ok: false; error: { status: number; message: string } };
+  | { ok: false; error: { status: number; message: string; code?: string } };
+
+// A move that is malformed is a 400; one that is well-formed but not allowed
+// right now (wrong turn, card does not fit, ...) conflicts with the game: 409
+const BAD_REQUEST_CODES: readonly IllegalMoveCode[] = [
+  'NO_CARDS',
+  'CARD_NOT_IN_HAND',
+  'MIXED_RANKS',
+  'CHOICE_REQUIRED',
+  'INVALID_CHOICE',
+];
 
 const roomChannel = (roomId: string) => `room:${roomId}`;
 const userChannel = (userId: string) => `user:${userId}`;
@@ -67,9 +82,12 @@ const messageOf = (err: HttpException): string => {
 };
 
 // Client -> server events reply through the acknowledgement callback:
-//   { ok: true, ... } or { ok: false, error: { status, message } }
+//   { ok: true, ... } or { ok: false, error: { status, message, code? } }
+//   room:join, room:toggleReady, room:sendMessage, game:start, and the moves
+//   game:playCards, game:drawCard, game:keepCard, game:wait
 // Server -> client events: room:state, room:playerJoined, room:playerLeft,
-// room:playerReady, room:message, room:left, game:started.
+// room:playerReady, room:message, room:left, game:started, and during a game
+// game:state (that player's own view) and game:events (what just happened).
 @WebSocketGateway({ namespace: 'game' })
 export class GameGateway
   implements OnGatewayInit, OnGatewayConnection, OnModuleDestroy
@@ -77,11 +95,13 @@ export class GameGateway
   private readonly logger = new Logger(GameGateway.name);
   private namespace: Namespace;
   private subscription?: Subscription;
+  private gameSubscription?: Subscription;
 
   constructor(
     private readonly jwt: JwtService,
     private readonly users: UserService,
     private readonly rooms: RoomsService,
+    private readonly games: GamesService,
     private readonly events: RoomEvents,
   ) {}
 
@@ -98,6 +118,9 @@ export class GameGateway
         this.logger.error(`Failed to broadcast ${event.type}`, err),
       );
     });
+    this.gameSubscription = this.games.updates$.subscribe((update) =>
+      this.broadcastGame(update),
+    );
   }
 
   handleConnection(socket: Socket) {
@@ -107,6 +130,7 @@ export class GameGateway
 
   onModuleDestroy() {
     this.subscription?.unsubscribe();
+    this.gameSubscription?.unsubscribe();
   }
 
   @SubscribeMessage('room:join')
@@ -124,7 +148,8 @@ export class GameGateway
       }
       await socket.join(roomChannel(roomId));
       dataOf(socket).roomId = roomId;
-      return { room };
+      // A game already under way is included, so a reconnecting player can resume
+      return { room, game: this.games.getView(dataOf(socket).user.id, roomId) };
     });
   }
 
@@ -140,12 +165,51 @@ export class GameGateway
 
   @SubscribeMessage('game:start')
   startGame(@ConnectedSocket() socket: Socket) {
-    return this.handle(async () => ({
-      room: await this.rooms.startGame(
-        dataOf(socket).user.id,
-        this.currentRoom(socket),
+    return this.handle(async () => {
+      const { user } = dataOf(socket);
+      const roomId = this.currentRoom(socket);
+
+      // The room checks who may start; then the game itself is dealt
+      const room = await this.rooms.startGame(user.id, roomId);
+      this.games.create(
+        roomId,
+        room.players.map((p) => ({ seat: p.seat, userId: p.user?.id ?? null })),
+      );
+      return { room, game: this.games.getView(user.id, roomId) };
+    });
+  }
+
+  @SubscribeMessage('game:playCards')
+  playCards(@ConnectedSocket() socket: Socket, @MessageBody() body: unknown) {
+    return this.handle(async () => {
+      const { cards, suit, demand } = await parse(PlayCardsDto, body);
+      return this.move(socket, (userId, roomId) =>
+        this.games.play(userId, roomId, cards, { suit, demand }),
+      );
+    });
+  }
+
+  @SubscribeMessage('game:drawCard')
+  drawCard(@ConnectedSocket() socket: Socket) {
+    return this.handle(async () =>
+      this.move(socket, (userId, roomId) => this.games.draw(userId, roomId)),
+    );
+  }
+
+  @SubscribeMessage('game:keepCard')
+  keepCard(@ConnectedSocket() socket: Socket) {
+    return this.handle(async () =>
+      this.move(socket, (userId, roomId) =>
+        this.games.keepDrawnCard(userId, roomId),
       ),
-    }));
+    );
+  }
+
+  @SubscribeMessage('game:wait')
+  waitTurn(@ConnectedSocket() socket: Socket) {
+    return this.handle(async () =>
+      this.move(socket, (userId, roomId) => this.games.wait(userId, roomId)),
+    );
   }
 
   @SubscribeMessage('room:sendMessage')
@@ -181,6 +245,19 @@ export class GameGateway
     } satisfies SocketData;
   }
 
+  // Runs a move for the socket's user in the room they joined. The result
+  // reaches everyone through game:state / game:events; the acknowledgement
+  // carries the mover's fresh view for convenience.
+  private move(
+    socket: Socket,
+    action: (userId: string, roomId: string) => void,
+  ) {
+    const { user } = dataOf(socket);
+    const roomId = this.currentRoom(socket);
+    action(user.id, roomId);
+    return { game: this.games.getView(user.id, roomId) };
+  }
+
   private currentRoom(socket: Socket): string {
     const roomId = dataOf(socket).roomId;
     if (!roomId) throw new ConflictException('Join a room first');
@@ -199,11 +276,34 @@ export class GameGateway
           error: { status: err.getStatus(), message: messageOf(err) },
         };
       }
+      if (err instanceof IllegalMoveError) {
+        return {
+          ok: false,
+          error: {
+            status: BAD_REQUEST_CODES.includes(err.code) ? 400 : 409,
+            code: err.code,
+            message: err.message,
+          },
+        };
+      }
       this.logger.error('Unexpected error in socket handler', err);
       return {
         ok: false,
         error: { status: 500, message: 'Internal server error' },
       };
+    }
+  }
+
+  // Each player gets only their own view (their hand, never another's); the
+  // events of what just happened are public and go to the whole room
+  private broadcastGame(update: GameUpdate): void {
+    for (const { userId, view } of update.views) {
+      this.namespace.to(userChannel(userId)).emit('game:state', view);
+    }
+    if (update.events.length > 0) {
+      this.namespace
+        .to(roomChannel(update.roomId))
+        .emit('game:events', update.events);
     }
   }
 

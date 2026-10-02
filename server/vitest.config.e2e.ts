@@ -10,6 +10,7 @@ export default defineConfig({
     fileParallelism: false,
     env: {
       DATABASE_URL: 'postgresql://makao:makao@localhost:5432/makao_test',
+      BOT_DELAY_MS: '5',
     },
   },
 });

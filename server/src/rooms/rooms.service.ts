@@ -240,6 +240,16 @@ export class RoomsService {
     return this.getRoomView(roomId, userId);
   }
 
+  // Called by the game service when a game ends; players are then free to
+  // join or create another room
+  async markFinished(roomId: string): Promise<void> {
+    await this.rooms.update(
+      { id: roomId, status: RoomStatus.InProgress },
+      { status: RoomStatus.Finished, finishedAt: new Date() },
+    );
+    this.events.emit({ type: 'changed', roomId });
+  }
+
   async addBot(userId: string, roomId: string): Promise<RoomView> {
     const room = await this.requireHostedWaitingRoom(userId, roomId);
     const seat = firstFreeSeat(room);

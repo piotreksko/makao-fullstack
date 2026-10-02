@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module.js';
 import { UserModule } from '../user/user.module.js';
 import { GameGateway } from './game.gateway.js';
+import { GAME_RNG, GamesService } from './games.service.js';
 import { RoomEvents } from './room-events.service.js';
 import { RoomPlayer } from './room-player.entity.js';
 import { Room } from './room.entity.js';
@@ -16,6 +17,12 @@ import { RoomsService } from './rooms.service.js';
     UserModule,
   ],
   controllers: [RoomsController],
-  providers: [RoomsService, RoomEvents, GameGateway],
+  providers: [
+    RoomsService,
+    RoomEvents,
+    GamesService,
+    { provide: GAME_RNG, useValue: Math.random },
+    GameGateway,
+  ],
 })
 export class RoomsModule {}
