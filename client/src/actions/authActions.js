@@ -4,6 +4,7 @@ import {
   me as meApi
 } from "../services/authApi";
 import { getToken, setToken, clearToken } from "../services/tokenStorage";
+import { connectSocket, disconnectSocket } from "../services/socket";
 
 export const AUTH_REQUEST = "AUTH_REQUEST";
 export const AUTH_SUCCESS = "AUTH_SUCCESS";
@@ -35,6 +36,7 @@ const authenticate = (request, payload) => async dispatch => {
     const { accessToken } = await request(payload);
     setToken(accessToken);
     const user = await meApi();
+    connectSocket();
     dispatch({ type: AUTH_SUCCESS, user, token: accessToken });
   } catch (err) {
     clearToken();
@@ -53,6 +55,7 @@ export const restoreSession = () => async dispatch => {
   }
   try {
     const user = await meApi();
+    connectSocket();
     dispatch({ type: AUTH_SUCCESS, user, token });
   } catch (err) {
     // a 401 is already handled by sessionExpired via the api client
@@ -64,9 +67,13 @@ export const restoreSession = () => async dispatch => {
 
 export const logoutUser = () => {
   clearToken();
+  disconnectSocket();
   return { type: AUTH_LOGOUT };
 };
 
-export const sessionExpired = () => ({ type: SESSION_EXPIRED });
+export const sessionExpired = () => {
+  disconnectSocket();
+  return { type: SESSION_EXPIRED };
+};
 
 export const clearAuthError = () => ({ type: AUTH_CLEAR_ERROR });

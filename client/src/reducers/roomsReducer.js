@@ -5,6 +5,7 @@ import {
   ROOM_ACTION_REQUEST,
   ROOM_ACTION_SUCCESS,
   ROOM_ACTION_FAILURE,
+  ROOM_STATE_UPDATED,
   ROOM_LEFT,
   ROOMS_CLEAR_ERROR
 } from "../actions/roomActions";
@@ -31,6 +32,8 @@ export default function(state = initialState, action) {
       return { ...state, actionLoading: false, currentRoom: action.room };
     case ROOM_ACTION_FAILURE:
       return { ...state, actionLoading: false, error: action.error };
+    case ROOM_STATE_UPDATED:
+      return { ...state, currentRoom: action.room };
     case ROOM_LEFT:
       return { ...state, actionLoading: false, currentRoom: null };
     case ROOMS_CLEAR_ERROR:

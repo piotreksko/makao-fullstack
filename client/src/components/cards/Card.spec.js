@@ -4,8 +4,8 @@ import Card from "./Card";
 
 describe("Card", () => {
   const card = {
-    weight: "spades",
-    type: "ace"
+    suit: "spades",
+    rank: "ace"
   };
   let props;
   let wrapper;

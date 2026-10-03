@@ -5,6 +5,8 @@ import {
   joinByCode as joinByCodeApi,
   leaveRoom as leaveRoomApi
 } from "../services/roomsApi";
+import { emit } from "../services/socket";
+import { gameStateUpdated } from "./gameActions";
 
 export const ROOMS_LIST_REQUEST = "ROOMS_LIST_REQUEST";
 export const ROOMS_LIST_SUCCESS = "ROOMS_LIST_SUCCESS";
@@ -12,6 +14,7 @@ export const ROOMS_LIST_FAILURE = "ROOMS_LIST_FAILURE";
 export const ROOM_ACTION_REQUEST = "ROOM_ACTION_REQUEST";
 export const ROOM_ACTION_SUCCESS = "ROOM_ACTION_SUCCESS";
 export const ROOM_ACTION_FAILURE = "ROOM_ACTION_FAILURE";
+export const ROOM_STATE_UPDATED = "ROOM_STATE_UPDATED";
 export const ROOM_LEFT = "ROOM_LEFT";
 export const ROOMS_CLEAR_ERROR = "ROOMS_CLEAR_ERROR";
 
@@ -31,6 +34,11 @@ const roomsErrorMessage = err => {
       return "Something went wrong. Please try again.";
   }
 };
+
+// Socket acks carry a message already meant for display, unlike the REST
+// client's HttpException bodies above
+const socketErrorMessage = err =>
+  err.serverMessage || "Could not reach the server. Please try again.";
 
 export const fetchRooms = () => async dispatch => {
   dispatch({ type: ROOMS_LIST_REQUEST });
@@ -68,6 +76,37 @@ export const leaveRoom = id => async dispatch => {
     dispatch({ type: ROOM_LEFT });
   } catch (err) {
     dispatch({ type: ROOM_ACTION_FAILURE, error: roomsErrorMessage(err) });
+  }
+};
+
+export const roomStateUpdated = room => ({ type: ROOM_STATE_UPDATED, room });
+
+// Seats you in the room's Socket.IO channel; without this you're a member in
+// the database but won't receive any room:state/chat/ready pushes for it
+export const joinRoomChannel = roomId => async dispatch => {
+  try {
+    const { room, game } = await emit("room:join", { roomId });
+    dispatch(roomStateUpdated(room));
+    if (game) dispatch(gameStateUpdated(game));
+  } catch (err) {
+    dispatch({ type: ROOM_ACTION_FAILURE, error: socketErrorMessage(err) });
+  }
+};
+
+export const toggleReady = () => async dispatch => {
+  try {
+    await emit("room:toggleReady");
+  } catch (err) {
+    dispatch({ type: ROOM_ACTION_FAILURE, error: socketErrorMessage(err) });
+  }
+};
+
+export const startGame = () => async dispatch => {
+  try {
+    const { game } = await emit("game:start");
+    if (game) dispatch(gameStateUpdated(game));
+  } catch (err) {
+    dispatch({ type: ROOM_ACTION_FAILURE, error: socketErrorMessage(err) });
   }
 };
 

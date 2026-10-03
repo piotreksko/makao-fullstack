@@ -6,41 +6,27 @@ import DemandIcon from "../components/icons/DemandIcon";
 import SuitIcon from "../components/icons/SuitIcon";
 import WaitIcon from "../components/icons/WaitIcon";
 
-const Icons = props => {
-  const gameState = props.gameState,
-    modals = props.modals;
+const Icons = ({ view }) => {
+  if (!view) return null;
+  const gameOver = view.status === "finished";
+  const topCard = view.pile[view.pile.length - 1];
 
-  return !modals.gameOver ? (
+  return !gameOver ? (
     <Aux>
-      <BattleIcon
-        battleCards={gameState.cardsToTake}
-      />
-      <DemandIcon
-        jackActive={gameState.jackActive && !modals.jack}
-        chosenType={gameState.chosenType}
-      />
+      <BattleIcon battleCards={view.penalty > 0 ? view.penalty + 1 : 0} />
+      <DemandIcon jackActive={!!view.demand} chosenType={view.demand?.rank} />
       <SuitIcon
-        show={
-          gameState.pile[gameState.pile.length - 1].type === "ace" &&
-          !modals.ace
-        }
-        chosenWeight={gameState.chosenWeight}
-        gameOver={gameState.gameOver}
+        show={topCard?.rank === "ace" && view.chosenSuit != null}
+        chosenWeight={view.chosenSuit}
+        gameOver={gameOver}
       />
-      <WaitIcon
-        waitTurn={gameState.waitTurn}
-        gameOver={gameState.gameOver}
-        playerIcon={true}
-      />
+      <WaitIcon waitTurn={view.pendingSkips} gameOver={gameOver} playerIcon={true} />
     </Aux>
   ) : null;
 };
 
-const mapStateToProps = state => {
-  return {
-    gameState: state.gameState,
-    modals: state.modals
-  };
-};
+const mapStateToProps = state => ({
+  view: state.game.view
+});
 
 export default connect(mapStateToProps)(Icons);

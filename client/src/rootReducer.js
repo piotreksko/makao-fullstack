@@ -1,6 +1,5 @@
 import { createStore, combineReducers, applyMiddleware, compose } from "redux";
-import gameState from "./reducers/gameStateReducer";
-import modals from './reducers/modalsReducer';
+import game from "./reducers/gameReducer";
 import stats from './reducers/statsReducer';
 import auth from './reducers/authReducer';
 import rooms from './reducers/roomsReducer';
@@ -9,8 +8,7 @@ import soundsMiddleware from 'redux-sounds';
 import { soundsData } from './constants/soundsData';
 
 const rootReducer = combineReducers({
-  gameState,
-  modals,
+  game,
   stats,
   auth,
   rooms

@@ -11,6 +11,9 @@ export class SocketError extends Error {
     super(`${event} failed: ${error?.message || "unknown error"}`)
     this.status = error?.status
     this.code = error?.code
+    // The server's own message, already written for display (e.g. "Only the
+    // host can manage bots"); .message above has the "<event> failed:" prefix
+    this.serverMessage = error?.message
   }
 }
 

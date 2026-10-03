@@ -48,9 +48,9 @@ describe("game over modal", () => {
       expect(div.text()).toEqual("Victory");
     });
 
-    it("says 'Computer has won'", () => {
+    it("says 'You have lost'", () => {
       const div = modal().find("h4");
-      expect(div.text()).toEqual("Computer has won");
+      expect(div.text()).toEqual("You have lost");
     });
 
     it("should call a function when buttons is clicked", () => {

@@ -20,7 +20,8 @@ describe("action buttons", () => {
       isPlayerTurn: undefined,
       waitTurn: undefined,
       playerCanWait: undefined,
-      firstCardChecked: undefined
+      canKeep: undefined,
+      onKeep: undefined
     };
     wrapper = undefined;
   });
@@ -55,8 +56,7 @@ describe("action buttons", () => {
     describe("enables 'End turn' button", () => {
       beforeEach(() => {
         props.hasSelected = 1;
-        props.isPlayer = true;
-        props.firstCardChecked = true;
+        props.isPlayerTurn = true;
       });
 
       it("enables 'End turn' button", () => {

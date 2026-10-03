@@ -14,7 +14,7 @@ export default function WhoStartsModal(props) {
       }}
     >
       <h4 style={{ color: "white", margin: 10, padding: 10 }}>
-        {props.playerStarts ? "You go first" : "Computer goes first"}
+        {props.playerStarts ? "You go first" : `Seat ${props.startingSeat} goes first`}
       </h4>
     </div>
   );
@@ -22,5 +22,6 @@ export default function WhoStartsModal(props) {
 
 WhoStartsModal.propTypes = {
   show: PropTypes.bool,
-  playerStarts: PropTypes.bool
+  playerStarts: PropTypes.bool,
+  startingSeat: PropTypes.number
 };

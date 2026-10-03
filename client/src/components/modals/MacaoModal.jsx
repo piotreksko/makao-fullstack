@@ -16,8 +16,8 @@ export default function MacaoModal(props) {
       <h4 style={{ color: "white", margin: 10, padding: 10 }}>
         {props.playerMacao
           ? "You: Macao!"
-          : props.cpuPlayerMacao
-          ? "Computer: Macao!"
+          : props.otherSeatMacao
+          ? `Seat ${props.otherSeatMacao}: Macao!`
           : ""}
         <br />
       </h4>
@@ -28,5 +28,5 @@ export default function MacaoModal(props) {
 MacaoModal.propTypes = {
   show: PropTypes.bool,
   playerMacao: PropTypes.bool,
-  cpuPlayerMacao: PropTypes.bool
+  otherSeatMacao: PropTypes.number
 };

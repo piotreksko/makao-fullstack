@@ -9,10 +9,10 @@ export default function GameOverModal(props) {
         {props.playerWon ? "Victory" : "Defeat"}
       </h2>
       <h4 style={{ color: "white" }}>
-        {props.playerWon ? "You have won" : "Computer has won"}
+        {props.playerWon ? "You have won" : "You have lost"}
       </h4>
       <ModalButton onClick={() => props.restartGame()} image={"restart_button"} />
-      <h5 style={{ color: "white" }}>Play again</h5>
+      <h5 style={{ color: "white" }}>Back to lobby</h5>
     </div>
   );
 }

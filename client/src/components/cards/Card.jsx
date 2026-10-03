@@ -7,7 +7,7 @@ const cardImages = import.meta.glob("../../content/images/cards/*.png", {
 });
 
 const Card = ({ card, index, fromPile, cardClass, clickOwnCard }) => {
-  const fileName = card.type + "_of_" + card.weight;
+  const fileName = card.rank + "_of_" + card.suit;
   const image = cardImages[`../../content/images/cards/${fileName}.png`];
 
   const cardStyle = {

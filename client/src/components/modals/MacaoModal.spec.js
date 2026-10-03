@@ -6,7 +6,7 @@ describe("game over modal", () => {
   let props;
   let wrapper;
   const playerMacao = "You: Macao!";
-  const cpuPlayerMacao = "Computer: Macao!";
+  const otherSeatMacao = "Seat 2: Macao!";
   const mockFn = jest.fn();
   const modal = () => {
     if (!wrapper) {
@@ -19,7 +19,7 @@ describe("game over modal", () => {
     props = {
       show: undefined,
       playerMacao: undefined,
-      cpuPlayerMacao: undefined
+      otherSeatMacao: undefined
     };
     wrapper = undefined;
   });
@@ -45,10 +45,10 @@ describe("game over modal", () => {
       expect(div.text()).toEqual(playerMacao);
     });
 
-    it(`says ${cpuPlayerMacao}`, () => {
-      props.cpuPlayerMacao = true;
+    it(`says ${otherSeatMacao}`, () => {
+      props.otherSeatMacao = 2;
       const div = modal().find("h4");
-      expect(div.text()).toEqual(cpuPlayerMacao);
+      expect(div.text()).toEqual(otherSeatMacao);
     });
   });
 });

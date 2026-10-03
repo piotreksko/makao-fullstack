@@ -1,111 +1,54 @@
-import React, { PureComponent } from "react";
+import React, { useState } from "react";
 import { connect } from "react-redux";
-import * as logicActions from "../actions/logicActions";
-import * as soundActions from "../actions/soundActions";
-import * as statsActions from "../actions/statsActions";
+import ReactModal from "react-modal";
 import RulesModal from "../components/modals/RulesModal";
 import RulesButton from "../components/buttons/RulesButton";
 import RestartButton from "../components/buttons/RestartButton";
-import ReactModal from "react-modal";
 
-export class Header extends PureComponent {
-  constructor(props) {
-    super(props);
+export const Header = ({ view, currentRoom, onLeave }) => {
+  const [openRules, setOpenRules] = useState(false);
 
-    this.state = {
-      openRules: false
-    };
-  }
+  if (!view || !view.you) return null;
+  const { you } = view;
 
-  componentDidMount() {
-    this.props.fetchStats();
-  }
+  return (
+    <div className="score-board">
+      <ReactModal
+        isOpen={openRules}
+        shouldCloseOnOverlayClick={true}
+        shouldCloseOnEsc={true}
+        ariaHideApp={false}
+        id="rules"
+        className="center rules"
+        overlayClassName="overlay"
+      >
+        <RulesModal close={() => setOpenRules(false)} />
+      </ReactModal>
+      <RestartButton onClick={onLeave} />
+      <RulesButton onClick={() => setOpenRules(true)} />
 
-  toggleRules = () => {
-    this.props.playSound("click");
-    this.setState({
-      openRules: !this.state.openRules
-    });
-  };
-
-  restartGame = () => {
-    this.props.playSound("click");
-    this.props.restartGame();
-  };
-
-  render() {
-    return (
-      <div className="score-board">
-        <ReactModal
-          isOpen={this.state.openRules}
-          shouldCloseOnOverlayClick={true}
-          shouldCloseOnEsc={true}
-          ariaHideApp={false}
-          id="rules"
-          className="center rules"
-          overlayClassName="overlay"
-        >
-          <RulesModal close={this.toggleRules} />
-        </ReactModal>
-        <RestartButton onClick={this.restartGame} />
-        <RulesButton onClick={this.toggleRules} />
-
-        <div className="global-stats">
-          <h6>Global statistics</h6>
-          <div className="score">
-            <label>Makao call count:</label>
-            <span> {this.props.globalStats.totalMacaoCalls}</span>
-          </div>
-          <div className="score">
-            <label>Total player score:</label>
-            <span> {this.props.globalStats.totalPlayerWins}</span>
-          </div>
-          <div className="score">
-            <label>Total computer score:</label>
-            <span> {this.props.globalStats.totalComputerWins}</span>
-          </div>
-          <div className="total-moves-counter">
-            <label>Total moves:</label>
-            <span> {this.props.globalStats.totalMoves}</span>
-          </div>
+      <div className="current-stats">
+        <h6>Room {currentRoom?.inviteCode ? `(${currentRoom.inviteCode})` : ""}</h6>
+        <div className="score">
+          <label>Turn:</label>
+          <span> {view.currentSeat === you.seat ? "You" : `Seat ${view.currentSeat}`}</span>
         </div>
-        <div className="current-stats">
-          <h6>Current game</h6>
-          <div className="score">
-            <label>Moves:</label>
-            <span> {this.props.localStats.totalMoves}</span>
-          </div>
-          <div className="score">
-            <label>Computer score:</label>
-            <span> {this.props.localStats.totalComputerWins}</span>
-          </div>
-          <div className="score">
-            <label>Your score:</label>
-            <span> {this.props.localStats.totalPlayerWins}</span>
-          </div>
+        <div className="score">
+          <label>Your cards:</label>
+          <span> {you.hand.length}</span>
+        </div>
+        <div className="score">
+          <label>Deck:</label>
+          <span> {view.deckCount}</span>
         </div>
       </div>
-    );
-  }
-}
-
-const mapStateToProps = state => {
-  return {
-    globalStats: state.stats.global,
-    localStats: state.stats.local
-  };
+    </div>
+  );
 };
 
-const mapDispatchToProps = dispatch => {
-  return {
-    fetchStats: () => dispatch(statsActions.fetchStats()),
-    updateLocalStat: (stat, value) =>
-      dispatch(statsActions.updateLocalStat(stat, value)),
-    playSound: soundName => dispatch(soundActions.playSound(soundName))
-  };
-};
+const mapStateToProps = state => ({
+  view: state.game.view,
+  currentRoom: state.rooms.currentRoom
+});
 
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(Header);
+export default connect(mapStateToProps)(Header);
