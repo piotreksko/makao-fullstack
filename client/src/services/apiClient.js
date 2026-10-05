@@ -40,5 +40,6 @@ export const apiRequest = async (path, options = {}) => {
     throw new ApiError(options.method || "GET", path, res.status, body);
   }
 
+  if (res.status === 204) return null;
   return res.json();
 };

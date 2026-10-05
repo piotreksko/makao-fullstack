@@ -27,6 +27,8 @@ export const GameView = ({
   onLeave,
   view,
   events,
+  error,
+  clearError,
   playCards,
   drawCard,
   keepCard,
@@ -37,6 +39,12 @@ export const GameView = ({
   const [pendingChoice, setPendingChoice] = useState(null);
   const [macaoSeat, setMacaoSeat] = useState(null);
   const [whoStarts, setWhoStarts] = useState(true);
+
+  useEffect(() => {
+    if (!error) return undefined;
+    const timer = setTimeout(clearError, 3000);
+    return () => clearTimeout(timer);
+  }, [error, clearError]);
 
   useEffect(() => {
     playSound("shuffle");
@@ -113,21 +121,46 @@ export const GameView = ({
     setSelectedCards([]);
   };
 
-  const opponents = view.players
+  // Seats go clockwise from you in turn order, so the next player sits on your left
+  const MAX_SEATS = 4;
+  const clockwise = seat => (seat - you.seat + MAX_SEATS) % MAX_SEATS;
+  const areasFor = { 1: ["top"], 2: ["left", "right"], 3: ["left", "top", "right"] };
+  const ordered = view.players
     .filter(p => p.seat !== you.seat)
-    .map(p => {
-      const roomPlayer = currentRoom?.players.find(rp => rp.seat === p.seat);
-      return {
-        seat: p.seat,
-        cardCount: p.cardCount,
-        skipTurns: p.skipTurns,
-        place: p.place,
-        name: roomPlayer?.isBot ? "Bot" : (roomPlayer?.user?.displayName ?? `Seat ${p.seat}`)
-      };
-    });
+    .sort((a, b) => clockwise(a.seat) - clockwise(b.seat));
+  const opponents = ordered.map((p, i) => {
+    const roomPlayer = currentRoom?.players.find(rp => rp.seat === p.seat);
+    return {
+      seat: p.seat,
+      area: (areasFor[ordered.length] ?? [])[i],
+      cardCount: p.cardCount,
+      skipTurns: p.skipTurns,
+      place: p.place,
+      name: roomPlayer?.isBot ? "Bot" : (roomPlayer?.user?.displayName ?? `Seat ${p.seat}`)
+    };
+  });
 
   return (
     <Aux>
+      {error && (
+        <div
+          onClick={clearError}
+          style={{
+            position: "fixed",
+            top: 10,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 1000,
+            background: "#c0392b",
+            color: "white",
+            padding: "8px 16px",
+            borderRadius: 6,
+            cursor: "pointer"
+          }}
+        >
+          {error}
+        </div>
+      )}
       <Modals
         view={view}
         macaoSeat={macaoSeat}
@@ -141,36 +174,49 @@ export const GameView = ({
         <Confetti active={you.hand.length === 0} config={confettiConfig} />
       </div>
       <Header onLeave={onLeave} />
-      <Opponents seats={opponents} />
-      <div className="flex-container middle cards-container">
-        <Deck
-          onDraw={drawCard}
-          canDraw={isMyTurn && !you.drawnCard && view.pendingSkips === 0}
-          deckCount={view.deckCount}
-        />
-        <Pile cards={view.pile} />
-        <Icons />
+      <div className="table">
+        <div className="table-area table-top">
+          <Opponents seats={opponents} area="top" />
+        </div>
+        <div className="table-area table-left">
+          <Opponents seats={opponents} area="left" />
+        </div>
+        <div className="table-area table-center">
+          <Deck
+            onDraw={drawCard}
+            canDraw={isMyTurn && !you.drawnCard && view.pendingSkips === 0}
+            deckCount={view.deckCount}
+          />
+          <Pile cards={view.pile} />
+          <Icons />
+        </div>
+        <div className="table-area table-right">
+          <Opponents seats={opponents} area="right" />
+        </div>
+        <div className="table-area table-bottom">
+          <Player
+            hand={you.hand}
+            legalCards={you.legalCards}
+            drawnCard={you.drawnCard}
+            isMyTurn={isMyTurn}
+            pendingSkips={view.pendingSkips}
+            skipTurns={mySummary?.skipTurns ?? 0}
+            selectedCards={selectedCards}
+            onSelectCard={toggleCard}
+            onConfirm={confirmCards}
+            onKeep={keepCard}
+            onWait={waitTurn}
+          />
+        </div>
       </div>
-      <Player
-        hand={you.hand}
-        legalCards={you.legalCards}
-        drawnCard={you.drawnCard}
-        isMyTurn={isMyTurn}
-        pendingSkips={view.pendingSkips}
-        skipTurns={mySummary?.skipTurns ?? 0}
-        selectedCards={selectedCards}
-        onSelectCard={toggleCard}
-        onConfirm={confirmCards}
-        onKeep={keepCard}
-        onWait={waitTurn}
-      />
     </Aux>
   );
 };
 
 const mapStateToProps = state => ({
   view: state.game.view,
-  events: state.game.events
+  events: state.game.events,
+  error: state.game.error
 });
 
 const mapDispatchToProps = dispatch => ({
@@ -178,6 +224,7 @@ const mapDispatchToProps = dispatch => ({
   drawCard: () => dispatch(gameActions.drawCard()),
   keepCard: () => dispatch(gameActions.keepCard()),
   waitTurn: () => dispatch(gameActions.waitTurn()),
+  clearError: () => dispatch(gameActions.clearGameError()),
   playSound: soundName => dispatch(soundActions.playSound(soundName))
 });
 

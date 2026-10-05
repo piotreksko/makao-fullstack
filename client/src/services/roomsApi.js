@@ -10,6 +10,8 @@ export const createRoom = ({ visibility, maxPlayers, bots }) =>
 
 export const getRoom = id => apiRequest(`/rooms/${id}`);
 
+export const getMyRoom = () => apiRequest("/rooms/mine");
+
 export const joinRoom = (id, inviteCode) =>
   apiRequest(`/rooms/${id}/join`, {
     method: "POST",

@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomInt } from 'node:crypto';
@@ -42,7 +43,7 @@ const firstFreeSeat = (room: Room): number | undefined => {
 };
 
 @Injectable()
-export class RoomsService {
+export class RoomsService implements OnModuleInit {
   constructor(
     @InjectRepository(Room) private readonly rooms: Repository<Room>,
     @InjectRepository(RoomPlayer)
@@ -50,6 +51,27 @@ export class RoomsService {
     private readonly dataSource: DataSource,
     private readonly events: RoomEvents,
   ) {}
+
+  // Games live in memory, so none survives a restart; their rooms must not
+  // keep blocking their players from joining another room
+  async onModuleInit(): Promise<void> {
+    await this.rooms.update(
+      { status: RoomStatus.InProgress },
+      { status: RoomStatus.Finished, finishedAt: new Date() },
+    );
+  }
+
+  // The room this user is seated in and that is not finished, if any
+  async getActiveRoomView(userId: string): Promise<RoomView | null> {
+    const seat = await this.players
+      .createQueryBuilder('p')
+      .innerJoin('p.room', 'r')
+      .select('p.roomId', 'roomId')
+      .where('p.userId = :userId', { userId })
+      .andWhere('r.status != :finished', { finished: RoomStatus.Finished })
+      .getRawOne<{ roomId: string }>();
+    return seat ? this.getRoomView(seat.roomId, userId) : null;
+  }
 
   async listPublic(userId: string): Promise<RoomView[]> {
     const rooms = await this.rooms.find({

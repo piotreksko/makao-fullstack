@@ -20,6 +20,7 @@ export const Lobby = ({
   userId,
   error,
   fetchRooms,
+  fetchMyRoom,
   createRoom,
   joinRoom,
   joinByCode,
@@ -35,8 +36,9 @@ export const Lobby = ({
   useEffect(() => {
     if (!currentRoom) {
       fetchRooms();
+      fetchMyRoom();
     }
-  }, [currentRoom, fetchRooms]);
+  }, [currentRoom, fetchRooms, fetchMyRoom]);
 
   // Entering the room's Socket.IO channel is separate from being seated in
   // it (REST); room:state pushes only reach sockets that have joined
@@ -77,6 +79,14 @@ export const Lobby = ({
 
     return (
       <div className="tw:mx-auto tw:max-w-xl tw:p-6">
+        {error && (
+          <div
+            role="alert"
+            className="tw:mb-5 tw:rounded-lg tw:border tw:border-red-200 tw:bg-red-50 tw:px-4 tw:py-3 tw:text-sm tw:text-red-700"
+          >
+            {error}
+          </div>
+        )}
         <h1 className="tw:text-2xl tw:font-bold">
           Room {currentRoom.inviteCode ? `(${currentRoom.inviteCode})` : ""}
         </h1>
@@ -169,6 +179,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
   fetchRooms: () => dispatch(roomActions.fetchRooms()),
+  fetchMyRoom: () => dispatch(roomActions.fetchMyRoom()),
   createRoom: payload => dispatch(roomActions.createRoom(payload)),
   joinRoom: (id, inviteCode) => dispatch(roomActions.joinRoom(id, inviteCode)),
   joinByCode: inviteCode => dispatch(roomActions.joinByCode(inviteCode)),

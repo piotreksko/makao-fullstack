@@ -6,6 +6,15 @@ const cardImages = import.meta.glob("../../content/images/cards/*.png", {
   import: "default"
 });
 
+// Fetch and decode every face when the app loads. The references are kept so
+// the browser doesn't discard them before the cards are dealt.
+const preloadedFaces = Object.values(cardImages).map(src => {
+  const image = new Image();
+  image.src = src;
+  return image;
+});
+preloadedFaces.forEach(image => image.decode().catch(() => {}));
+
 const Card = ({ card, index, fromPile, cardClass, clickOwnCard }) => {
   const fileName = card.rank + "_of_" + card.suit;
   const image = cardImages[`../../content/images/cards/${fileName}.png`];

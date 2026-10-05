@@ -3,7 +3,8 @@ import {
   createRoom as createRoomApi,
   joinRoom as joinRoomApi,
   joinByCode as joinByCodeApi,
-  leaveRoom as leaveRoomApi
+  leaveRoom as leaveRoomApi,
+  getMyRoom as getMyRoomApi
 } from "../services/roomsApi";
 import { emit } from "../services/socket";
 import { gameStateUpdated } from "./gameActions";
@@ -47,6 +48,17 @@ export const fetchRooms = () => async dispatch => {
     dispatch({ type: ROOMS_LIST_SUCCESS, rooms });
   } catch (err) {
     dispatch({ type: ROOMS_LIST_FAILURE, error: roomsErrorMessage(err) });
+  }
+};
+
+// Puts back a room the user is still seated in (e.g. after a page reload), so
+// they can rejoin or leave it instead of being blocked from every other room
+export const fetchMyRoom = () => async dispatch => {
+  try {
+    const room = await getMyRoomApi();
+    if (room) dispatch({ type: ROOM_ACTION_SUCCESS, room });
+  } catch (err) {
+    dispatch({ type: ROOM_ACTION_FAILURE, error: roomsErrorMessage(err) });
   }
 };
 

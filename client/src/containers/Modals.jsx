@@ -7,6 +7,19 @@ import GameOverModal from "../components/modals/GameOverModal";
 import MacaoModal from "../components/modals/MacaoModal";
 import WhoStartsModal from "../components/modals/WhoStartsModal";
 
+// Explicit positioning, so ReactModal's own defaults can't move the popup
+const popupStyle = {
+  content: {
+    position: "fixed",
+    top: "38%",
+    left: "50%",
+    right: "auto",
+    bottom: "auto",
+    margin: 0,
+    transform: "translate(-50%, -50%)"
+  }
+};
+
 // Everything here is driven by props from GameView rather than its own redux
 // slice: ace/jack choices carry the pending cards, macao/whoStarts are one-shot
 // reactions to events, and game over is just the view's own status.
@@ -30,6 +43,7 @@ export default function Modals({
         ariaHideApp={false}
         className="suit-popup flex-container"
         overlayClassName="overlay"
+        style={popupStyle}
       >
         <ChangeSuitModal changeSuit={onChooseSuit} />
       </ReactModal>
@@ -39,6 +53,7 @@ export default function Modals({
         ariaHideApp={false}
         className="suit-popup flex-container"
         overlayClassName="overlay"
+        style={popupStyle}
       >
         <DemandCardModal demandCard={onChooseDemand} />
       </ReactModal>
@@ -48,6 +63,7 @@ export default function Modals({
         ariaHideApp={false}
         className="suit-popup flex-container"
         overlayClassName="overlay"
+        style={popupStyle}
       >
         <GameOverModal show={gameOver} playerWon={youWon} restartGame={onBackToLobby} />
       </ReactModal>

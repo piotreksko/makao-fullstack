@@ -17,10 +17,10 @@ const SuitIcon = props => {
       img = clubsSymbol;
       break;
     case "diamonds":
-      img = heartsSymbol;
+      img = diamondsSymbol;
       break;
     case "hearts":
-      img = diamondsSymbol;
+      img = heartsSymbol;
       break;
     default:
       break;

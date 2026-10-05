@@ -39,6 +39,12 @@ export class RoomsController {
     return this.roomsService.joinByCode(user.id, body.inviteCode);
   }
 
+  // Declared before ':id' so that 'mine' is not read as a room id
+  @Get('mine')
+  mine(@CurrentUser() user: AuthUser) {
+    return this.roomsService.getActiveRoomView(user.id);
+  }
+
   @Get(':id')
   get(@CurrentUser() user: AuthUser, @Param('id', ParseUUIDPipe) id: string) {
     return this.roomsService.getRoomView(id, user.id);
