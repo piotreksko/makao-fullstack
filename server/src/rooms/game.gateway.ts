@@ -149,7 +149,10 @@ export class GameGateway
       await socket.join(roomChannel(roomId));
       dataOf(socket).roomId = roomId;
       // A game already under way is included, so a reconnecting player can resume
-      return { room, game: this.games.getView(dataOf(socket).user.id, roomId) };
+      return {
+        room,
+        game: await this.games.getView(dataOf(socket).user.id, roomId),
+      };
     });
   }
 
@@ -171,11 +174,11 @@ export class GameGateway
 
       // The room checks who may start; then the game itself is dealt
       const room = await this.rooms.startGame(user.id, roomId);
-      this.games.create(
+      await this.games.create(
         roomId,
         room.players.map((p) => ({ seat: p.seat, userId: p.user?.id ?? null })),
       );
-      return { room, game: this.games.getView(user.id, roomId) };
+      return { room, game: await this.games.getView(user.id, roomId) };
     });
   }
 
@@ -248,14 +251,14 @@ export class GameGateway
   // Runs a move for the socket's user in the room they joined. The result
   // reaches everyone through game:state / game:events; the acknowledgement
   // carries the mover's fresh view for convenience.
-  private move(
+  private async move(
     socket: Socket,
-    action: (userId: string, roomId: string) => void,
+    action: (userId: string, roomId: string) => Promise<void>,
   ) {
     const { user } = dataOf(socket);
     const roomId = this.currentRoom(socket);
-    action(user.id, roomId);
-    return { game: this.games.getView(user.id, roomId) };
+    await action(user.id, roomId);
+    return { game: await this.games.getView(user.id, roomId) };
   }
 
   private currentRoom(socket: Socket): string {

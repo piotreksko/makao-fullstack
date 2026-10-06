@@ -227,9 +227,12 @@ describe('Playing a game over sockets (e2e)', () => {
     carol = await registerUser('Carol');
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     sockets.splice(0).forEach((socket) => socket.disconnect());
     recorders.clear();
+    // A game that just ended is still saving its result; the next test's
+    // TRUNCATE must not collide with that write
+    await new Promise((resolve) => setTimeout(resolve, 150));
   });
 
   afterAll(async () => {
@@ -463,6 +466,19 @@ describe('Playing a game over sockets (e2e)', () => {
         }
       }
       expect(status).toBe('finished');
+
+      // The result is kept: one game, with each player's place
+      const saved: { place: number; userId: string }[] =
+        await dataSource.query(
+          `SELECT gp."place", gp."userId" FROM game_players gp
+           JOIN games g ON g.id = gp."gameId"
+           WHERE g."roomId" = $1 ORDER BY gp."place"`,
+          [roomId],
+        );
+      expect(saved.map((row) => row.place)).toEqual([1, 2]);
+      expect(saved.map((row) => row.userId).sort()).toEqual(
+        [alice.id, bob.id].sort(),
+      );
 
       await http()
         .post('/rooms')

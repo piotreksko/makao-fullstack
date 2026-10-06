@@ -4,7 +4,6 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-  OnModuleInit,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { randomInt } from 'node:crypto';
@@ -43,7 +42,7 @@ const firstFreeSeat = (room: Room): number | undefined => {
 };
 
 @Injectable()
-export class RoomsService implements OnModuleInit {
+export class RoomsService {
   constructor(
     @InjectRepository(Room) private readonly rooms: Repository<Room>,
     @InjectRepository(RoomPlayer)
@@ -52,13 +51,12 @@ export class RoomsService implements OnModuleInit {
     private readonly events: RoomEvents,
   ) {}
 
-  // Games live in memory, so none survives a restart; their rooms must not
-  // keep blocking their players from joining another room
-  async onModuleInit(): Promise<void> {
-    await this.rooms.update(
-      { status: RoomStatus.InProgress },
-      { status: RoomStatus.Finished, finishedAt: new Date() },
-    );
+  async inProgressRoomIds(): Promise<string[]> {
+    const rooms = await this.rooms.find({
+      select: { id: true },
+      where: { status: RoomStatus.InProgress },
+    });
+    return rooms.map((room) => room.id);
   }
 
   // The room this user is seated in and that is not finished, if any
