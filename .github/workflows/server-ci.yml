@@ -58,4 +58,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build the image
-        run: docker build -t makao-server server
+        run: docker build -t makao-server .
