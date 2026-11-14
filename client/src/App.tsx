@@ -1,0 +1,55 @@
+import { useEffect } from "react";
+import { connect, type ConnectedProps } from 'react-redux';
+import type { RootState, AppDispatch } from './rootReducer';
+import './style/style.scss';
+import '../node_modules/bootstrap/dist/css/bootstrap.min.css';
+import './style/tailwind.css';
+import Aux from './hoc/Auxilliary';
+import Lobby from './containers/Lobby';
+import AuthPage from './containers/AuthPage';
+import * as authActions from './actions/authActions';
+
+const mapStateToProps = (state: RootState) => ({
+  user: state.auth.user,
+  initializing: state.auth.initializing
+});
+
+const mapDispatchToProps = (dispatch: AppDispatch) => ({
+  restoreSession: () => dispatch(authActions.restoreSession()),
+  logoutUser: () => dispatch(authActions.logoutUser())
+});
+
+const connector = connect(mapStateToProps, mapDispatchToProps);
+type Props = ConnectedProps<typeof connector>;
+
+export const App = ({ user, initializing, restoreSession, logoutUser }: Props) => {
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
+
+  if (initializing) {
+    return null;
+  }
+
+  if (!user) {
+    return <AuthPage />;
+  }
+
+  return (
+    <Aux>
+      <div className="tw:fixed tw:right-3 tw:top-2 tw:z-[1000] tw:flex tw:items-center tw:gap-3 tw:rounded-lg tw:bg-black/50 tw:px-3 tw:py-1.5 tw:text-sm tw:text-white">
+        <span>{user.displayName}</span>
+        <button
+          type="button"
+          onClick={logoutUser}
+          className="tw:cursor-pointer tw:rounded-md tw:border tw:border-white/40 tw:bg-transparent tw:px-2.5 tw:py-1 tw:text-white tw:hover:bg-white/20"
+        >
+          Log out
+        </button>
+      </div>
+      <Lobby />
+    </Aux>
+  );
+};
+
+export default connector(App);
