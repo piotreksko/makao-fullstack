@@ -3,6 +3,8 @@ import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as nodejs from "aws-cdk-lib/aws-lambda-nodejs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as sfn from "aws-cdk-lib/aws-stepfunctions";
+import * as tasks from "aws-cdk-lib/aws-stepfunctions-tasks";
 import { Construct } from "constructs";
 
 const GAMES_BY_WINNER_INDEX = "winner-finishedAt-index";
@@ -46,6 +48,31 @@ export class MakaoStack extends cdk.Stack {
     // indexes) and nothing else.
     table.grantReadData(getGames);
 
+    // Same workflow as the console one (see makao-game-stats.asl.json):
+    // invoke the Lambda, then branch on how many games came back.
+    // The *.jsonata variants use the JSONata query language, like the console version.
+    const queryGames = tasks.LambdaInvoke.jsonata(this, "Lambda Invoke", {
+      lambdaFunction: getGames,
+      outputs: "{% $states.result.Payload %}",
+    });
+
+    const hasGames = sfn.Pass.jsonata(this, "HasGames");
+    const noGames = sfn.Pass.jsonata(this, "NoGames");
+
+    const anyGames = sfn.Choice.jsonata(this, "Choice")
+      .when(
+        sfn.Condition.jsonata("{% $parse($states.input.body).count > 0 %}"),
+        hasGames,
+      )
+      .otherwise(noGames);
+
+    const stateMachine = new sfn.StateMachine(this, "GameStatsMachine", {
+      definitionBody: sfn.DefinitionBody.fromChainable(queryGames.next(anyGames)),
+    });
+    // CDK also adds lambda:InvokeFunction for just this function to the
+    // machine's role (the console gave it PowerUserAccess instead).
+
+    new cdk.CfnOutput(this, "StateMachineArn", { value: stateMachine.stateMachineArn });
     new cdk.CfnOutput(this, "FunctionName", { value: getGames.functionName });
     new cdk.CfnOutput(this, "TableName", { value: table.tableName });
   }
