@@ -3,6 +3,7 @@ import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as nodejs from "aws-cdk-lib/aws-lambda-nodejs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as sfn from "aws-cdk-lib/aws-stepfunctions";
 import * as tasks from "aws-cdk-lib/aws-stepfunctions-tasks";
 import { Construct } from "constructs";
@@ -72,6 +73,23 @@ export class MakaoStack extends cdk.Stack {
     // CDK also adds lambda:InvokeFunction for just this function to the
     // machine's role (the console gave it PowerUserAccess instead).
 
+    // Users sign in with their email; Cognito issues the JWTs.
+    const userPool = new cognito.UserPool(this, "UserPool", {
+      selfSignUpEnabled: true,
+      signInAliases: { email: true },
+      autoVerify: { email: true },
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // sandbox only
+    });
+
+    // Public client (no secret), like the SPA client from the console.
+    // userPassword is only here so the CLI test (initiate-auth) works.
+    const userPoolClient = userPool.addClient("WebClient", {
+      generateSecret: false,
+      authFlows: { userPassword: true, userSrp: true },
+    });
+
+    new cdk.CfnOutput(this, "UserPoolId", { value: userPool.userPoolId });
+    new cdk.CfnOutput(this, "UserPoolClientId", { value: userPoolClient.userPoolClientId });
     new cdk.CfnOutput(this, "StateMachineArn", { value: stateMachine.stateMachineArn });
     new cdk.CfnOutput(this, "FunctionName", { value: getGames.functionName });
     new cdk.CfnOutput(this, "TableName", { value: table.tableName });
