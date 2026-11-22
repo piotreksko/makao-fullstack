@@ -6,7 +6,12 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigw from "aws-cdk-lib/aws-apigatewayv2";
 import * as authorizers from "aws-cdk-lib/aws-apigatewayv2-authorizers";
 import * as integrations from "aws-cdk-lib/aws-apigatewayv2-integrations";
+import * as cloudwatch from "aws-cdk-lib/aws-cloudwatch";
+import * as cloudwatchActions from "aws-cdk-lib/aws-cloudwatch-actions";
 import * as cognito from "aws-cdk-lib/aws-cognito";
+import * as logs from "aws-cdk-lib/aws-logs";
+import * as sns from "aws-cdk-lib/aws-sns";
+import * as subscriptions from "aws-cdk-lib/aws-sns-subscriptions";
 import * as sfn from "aws-cdk-lib/aws-stepfunctions";
 import * as tasks from "aws-cdk-lib/aws-stepfunctions-tasks";
 import { Construct } from "constructs";
@@ -32,9 +37,17 @@ export class MakaoStack extends cdk.Stack {
       sortKey: { name: "finishedAt", type: dynamodb.AttributeType.STRING },
     });
 
+    // Lambda creates its log group on first run with retention "never expire",
+    // so logs would accumulate (and bill) forever. Owning the group lets us cap it.
+    const getGamesLogs = new logs.LogGroup(this, "GetGamesLogs", {
+      retention: logs.RetentionDays.ONE_MONTH,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // sandbox only
+    });
+
     // NodejsFunction bundles the TypeScript with esbuild on deploy,
     // replacing the manual build-and-paste routine.
     const getGames = new nodejs.NodejsFunction(this, "GetGamesFn", {
+      logGroup: getGamesLogs,
       // The handler lives outside infra/. CDK runs esbuild from projectRoot,
       // so that's the lambdas package (which has esbuild as a devDependency).
       entry: path.join(import.meta.dirname, "../../lambdas/handler.ts"),
@@ -120,7 +133,44 @@ export class MakaoStack extends cdk.Stack {
       authorizer,
     });
 
+    // Alarms notify an SNS topic. Set ALARM_EMAIL when deploying to get emails:
+    //   ALARM_EMAIL=me@example.com npx cdk deploy
+    // (the address is confirmed through a link AWS sends, and is never in git).
+    const alarmTopic = new sns.Topic(this, "AlarmTopic");
+    if (process.env.ALARM_EMAIL) {
+      alarmTopic.addSubscription(new subscriptions.EmailSubscription(process.env.ALARM_EMAIL));
+    }
+    const notify = new cloudwatchActions.SnsAction(alarmTopic);
+
+    // Lambda "Errors" counts crashes, timeouts and out-of-memory kills, NOT
+    // failures the handler catches and answers with a 500 itself.
+    const lambdaErrors = new cloudwatch.Alarm(this, "GetGamesErrorsAlarm", {
+      alarmDescription: "GetGamesFn crashed, timed out or ran out of memory",
+      metric: getGames.metricErrors({ period: cdk.Duration.minutes(5), statistic: "Sum" }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING, // no traffic is not a failure
+    });
+
+    // That is what this one covers: any 5xx the API returns, including the
+    // handler's own "internal error" responses.
+    const apiServerErrors = new cloudwatch.Alarm(this, "ApiServerErrorsAlarm", {
+      alarmDescription: "GamesApi returned 5xx responses",
+      metric: httpApi.metricServerError({ period: cdk.Duration.minutes(5), statistic: "Sum" }),
+      threshold: 1,
+      evaluationPeriods: 1,
+      comparisonOperator: cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+      treatMissingData: cloudwatch.TreatMissingData.NOT_BREACHING,
+    });
+
+    for (const alarm of [lambdaErrors, apiServerErrors]) {
+      alarm.addAlarmAction(notify);
+      alarm.addOkAction(notify);
+    }
+
     new cdk.CfnOutput(this, "ApiUrl", { value: httpApi.apiEndpoint });
+    new cdk.CfnOutput(this, "LogGroupName", { value: getGamesLogs.logGroupName });
     new cdk.CfnOutput(this, "StateMachineArn", { value: stateMachine.stateMachineArn });
     new cdk.CfnOutput(this, "FunctionName", { value: getGames.functionName });
     new cdk.CfnOutput(this, "TableName", { value: table.tableName });
