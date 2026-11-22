@@ -7,6 +7,7 @@ import { on } from "../services/socket";
 import RoomList from "../components/rooms/RoomList";
 import CreateRoomForm from "../components/rooms/CreateRoomForm";
 import JoinByCodeForm from "../components/rooms/JoinByCodeForm";
+import GameHistory from "../components/history/GameHistory";
 import GameView from "./GameView";
 import type { CreateRoomPayload } from "../services/roomsApi";
 import type { GameEvent, GameView as GameViewData, RoomView } from "../types";
@@ -195,6 +196,8 @@ export const Lobby = ({
       )}
 
       <CreateRoomForm onSubmit={createRoom} loading={actionLoading} />
+
+      <GameHistory />
     </div>
   );
 };

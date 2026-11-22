@@ -103,7 +103,16 @@ export class MakaoStack extends cdk.Stack {
       { jwtAudience: [userPoolClient.userPoolClientId] },
     );
 
-    const httpApi = new apigw.HttpApi(this, "GamesApi");
+    // Browsers block cross-origin calls unless the API says the origin is
+    // allowed. API Gateway answers the OPTIONS preflight itself.
+    // Add the production domain here when there is one.
+    const httpApi = new apigw.HttpApi(this, "GamesApi", {
+      corsPreflight: {
+        allowOrigins: ["http://localhost:3000"],
+        allowMethods: [apigw.CorsHttpMethod.GET],
+        allowHeaders: ["Authorization", "Content-Type"],
+      },
+    });
     httpApi.addRoutes({
       path: "/games",
       methods: [apigw.HttpMethod.GET],
