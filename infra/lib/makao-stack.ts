@@ -3,6 +3,9 @@ import * as cdk from "aws-cdk-lib";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as nodejs from "aws-cdk-lib/aws-lambda-nodejs";
 import * as lambda from "aws-cdk-lib/aws-lambda";
+import * as apigw from "aws-cdk-lib/aws-apigatewayv2";
+import * as authorizers from "aws-cdk-lib/aws-apigatewayv2-authorizers";
+import * as integrations from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as sfn from "aws-cdk-lib/aws-stepfunctions";
 import * as tasks from "aws-cdk-lib/aws-stepfunctions-tasks";
@@ -90,6 +93,25 @@ export class MakaoStack extends cdk.Stack {
 
     new cdk.CfnOutput(this, "UserPoolId", { value: userPool.userPoolId });
     new cdk.CfnOutput(this, "UserPoolClientId", { value: userPoolClient.userPoolClientId });
+    // HTTP API in front of the Lambda. The JWT authorizer checks the Cognito
+    // token's signature, issuer, expiry and audience before the Lambda runs.
+    // It matches the app client ID against `aud` (ID token) or `client_id`
+    // (access token), so send the access token.
+    const authorizer = new authorizers.HttpJwtAuthorizer(
+      "CognitoAuthorizer",
+      `https://cognito-idp.${this.region}.amazonaws.com/${userPool.userPoolId}`,
+      { jwtAudience: [userPoolClient.userPoolClientId] },
+    );
+
+    const httpApi = new apigw.HttpApi(this, "GamesApi");
+    httpApi.addRoutes({
+      path: "/games",
+      methods: [apigw.HttpMethod.GET],
+      integration: new integrations.HttpLambdaIntegration("GetGamesIntegration", getGames),
+      authorizer,
+    });
+
+    new cdk.CfnOutput(this, "ApiUrl", { value: httpApi.apiEndpoint });
     new cdk.CfnOutput(this, "StateMachineArn", { value: stateMachine.stateMachineArn });
     new cdk.CfnOutput(this, "FunctionName", { value: getGames.functionName });
     new cdk.CfnOutput(this, "TableName", { value: table.tableName });
