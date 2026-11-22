@@ -26,14 +26,16 @@
     "test": "vitest run"
   },
   "devDependencies": {
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.13",
     "@types/lodash": "^4.17.27",
     "@types/node": "^26.6.6",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@types/react-modal": "^3.16.3",
     "@vitejs/plugin-react": "^4.3.1",
-    "enzyme": "^3.8.0",
-    "enzyme-adapter-react-16": "^1.7.1",
     "jsdom": "^25.0.1",
     "redux-mock-store": "^1.5.3",
     "sass": "^1.77.0",

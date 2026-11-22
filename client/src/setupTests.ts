@@ -1,9 +1,7 @@
-import { vi } from "vitest";
-import Enzyme from "enzyme";
-import Adapter from "enzyme-adapter-react-16";
+import "@testing-library/jest-dom/vitest";
 
-Enzyme.configure({ adapter: new Adapter() });
-
-// The existing spec files use Jest's `jest.fn()`/`jest.mock()` API;
-// Vitest's equivalent is `vi`, so alias it to avoid rewriting every spec file.
-(globalThis as unknown as { jest: typeof vi }).jest = vi;
+// jsdom doesn't implement HTMLImageElement.decode(), which Card.tsx calls at
+// import time to preload the card faces.
+if (!HTMLImageElement.prototype.decode) {
+  HTMLImageElement.prototype.decode = () => Promise.resolve();
+}
